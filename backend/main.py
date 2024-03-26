@@ -1,16 +1,21 @@
 """Main file for FastAPI server"""
 
 import json
+import sys
 from typing import List, Union
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
 from pyaml_env import parse_config
-from movies import Movie
 
+project_path = '/'.join(__file__.split('/')[:-1])
+if project_path not in sys.path:
+    sys.path.append(project_path)
+
+from movies import Movie
 from static_files import static_file_response
 
 app = FastAPI()
-config = parse_config("./config.yaml")
+config = parse_config(f"{project_path}/config.yaml")
 
 
 @app.get("/api/config")
@@ -31,7 +36,7 @@ async def read_item(item_id: int, q: Union[str, None] = None):
     return {"item_id": item_id, "q": q}
 
 
-with open("movies.json", "r", encoding="utf-8") as file:
+with open(f"{project_path}/movies.json", "r", encoding="utf-8") as file:
     movies_data = json.load(file)
 movies = {f"{movie['title']}_{movie['year']}": Movie(**movie) for movie in movies_data}
 

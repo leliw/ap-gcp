@@ -1,0 +1,15 @@
+runtime: python311
+entrypoint: gunicorn -b :$PORT -k uvicorn.workers.UvicornWorker backend.main:app
+
+handlers:
+
+- url: /api/.*
+  script: auto
+
+- url: /
+  static_files: backend/static/browser/index.html
+  upload: backend/static/browser/index.html
+
+- url: /(.+)
+  static_files: backend/static/browser/\1
+  upload: backend/static/browser/(.+)
