@@ -7,7 +7,7 @@ deployable in Goggle Cloud Platform (App Engine).
 
 ```bash
 git clone https://github.com/leliw/ap-basic.git ap-gcp
-cd proxy-one-http
+cd ap-gcp
 rm -R -f .git
 git init
 git branch -m main
