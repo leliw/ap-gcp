@@ -1,0 +1,122 @@
+[
+    {
+        "title": "Inception",
+        "year": 2010,
+        "studio": "Warner Bros.",
+        "director": "Christopher Nolan"
+    },
+    {
+        "title": "The Matrix",
+        "year": 1999,
+        "studio": "Warner Bros.",
+        "director": "Lana and Lilly Wachowski"
+    },
+    {
+        "title": "Interstellar",
+        "year": 2014,
+        "studio": "Paramount Pictures",
+        "director": "Christopher Nolan"
+    },
+    {
+        "title": "Parasite",
+        "year": 2019,
+        "studio": "Barunson E&A",
+        "director": "Bong Joon-ho"
+    },
+    {
+        "title": "The Shawshank Redemption",
+        "year": 1994,
+        "studio": "Columbia Pictures",
+        "director": "Frank Darabont"
+    },
+    {
+        "title": "Gladiator",
+        "year": 2000,
+        "studio": "DreamWorks",
+        "director": "Ridley Scott"
+    },
+    {
+        "title": "The Godfather",
+        "year": 1972,
+        "studio": "Paramount Pictures",
+        "director": "Francis Ford Coppola"
+    },
+    {
+        "title": "Forrest Gump",
+        "year": 1994,
+        "studio": "Paramount Pictures",
+        "director": "Robert Zemeckis"
+    },
+    {
+        "title": "Fight Club",
+        "year": 1999,
+        "studio": "20th Century Fox",
+        "director": "David Fincher"
+    },
+    {
+        "title": "Pulp Fiction",
+        "year": 1994,
+        "studio": "Miramax Films",
+        "director": "Quentin Tarantino"
+    },
+    {
+        "title": "The Dark Knight",
+        "year": 2008,
+        "studio": "Warner Bros.",
+        "director": "Christopher Nolan"
+    },
+    {
+        "title": "The Lord of the Rings: The Fellowship of the Ring",
+        "year": 2001,
+        "studio": "New Line Cinema",
+        "director": "Peter Jackson"
+    },
+    {
+        "title": "Star Wars: Episode IV - A New Hope",
+        "year": 1977,
+        "studio": "20th Century Fox",
+        "director": "George Lucas"
+    },
+    {
+        "title": "Jurassic Park",
+        "year": 1993,
+        "studio": "Universal Pictures",
+        "director": "Steven Spielberg"
+    },
+    {
+        "title": "Titanic",
+        "year": 1997,
+        "studio": "Paramount Pictures",
+        "director": "James Cameron"
+    },
+    {
+        "title": "Avatar",
+        "year": 2009,
+        "studio": "20th Century Fox",
+        "director": "James Cameron"
+    },
+    {
+        "title": "The Silence of the Lambs",
+        "year": 1991,
+        "studio": "Orion Pictures",
+        "director": "Jonathan Demme"
+    },
+    {
+        "title": "Saving Private Ryan",
+        "year": 1998,
+        "studio": "DreamWorks",
+        "director": "Steven Spielberg"
+    },
+    {
+        "title": "Schindler's List",
+        "year": 1993,
+        "studio": "Universal Pictures",
+        "director": "Steven Spielberg"
+    },
+    {
+        "title": "Mad Max: Fury Road",
+        "year": 2015,
+        "studio": "Warner Bros.",
+        "director": "George Miller"
+    }
+]
