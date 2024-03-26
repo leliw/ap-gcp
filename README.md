@@ -3,7 +3,7 @@
 It's a simple full stack project with Angular frontend and Python backend
 deployable in Goggle Cloud Platform (App Engine).
 
-## Copy ap-basic project into new ap-gcp prject
+## Copy ap-basic project into new ap-gcp project
 
 ```bash
 git clone https://github.com/leliw/ap-basic.git ap-gcp
@@ -26,9 +26,20 @@ python -m pip install --upgrade pip
 pip install -r requirements-dev.txt
 ```
 
+## Angular static files
+
+GCP can serve static files independently from python service.
+It is faster especially when python service is restarting.
+
+By default, Angular files are compiled into directory
+`frontend/dist/frontend/browser/` but I have changed it
+to `backend/static` in `frontend\angular.json` file.
+So there is only one deployable service (`backend`)
+within static files. `app.yaml` file has to reflect that change.
+
 ## GCP app.yaml
 
-GCP requires `app.yaml` file **in root** directory.
+GCP requires `app.yaml` file in service root directory.
 It provides similar information as `Dockerfile` and `nginx.conf`.
 
 - runtime - some kind of base image
@@ -37,7 +48,7 @@ It provides similar information as `Dockerfile` and `nginx.conf`.
 
 ```yaml
 runtime: python311
-entrypoint: gunicorn -b :$PORT -k uvicorn.workers.UvicornWorker backend.main:app
+entrypoint: gunicorn -b :$PORT -k uvicorn.workers.UvicornWorker main:app
 
 handlers:
 
@@ -45,19 +56,19 @@ handlers:
   script: auto
 
 - url: /
-  static_files: frontend/dist/frontend/browser/index.html
-  upload: frontend/dist/frontend/browser/index.html
+  static_files: static/browser/index.html
+  upload: static/browser/index.html
 
 - url: /(.+)
-  static_files: frontend/dist/frontend/browser/\1
-  upload: frontend/dist/frontend/browser/(.+)
+  static_files: static/browser/\1
+  upload: static/browser/(.+)
 ```
 
 ## GCP .gcloudignore
 
 The second important file is `.gcloudignore`.
 It is like `.dockerignore` or `.gitignore`,
-specify which files shouldn't be send  to GCP.
+specify which files shouldn't be send to GCP.
 
 ```text
 .gcloudignore
@@ -69,89 +80,11 @@ __pycache__/
 
 **/.venv
 **/__pycache__/
-
-# Ignore the Angular project except the dist folder
-frontend/**
-!frontend/
-!frontend/dist/**
-```
-
-Last 3 lines prevents from sending Angular soure code but
-allowes to send distribution files.
-
-## GCP requirements.txt
-
-The `requirements.txt` file also has to be stored in
-**root** directory.
-
-```bash
-mv backend/requirements.txt ./requirements.txt
-```
-
-and update `requirements-dev.txt`.
-
-```text
--r ../requirements.txt
-
-# Linters
-ruff
-```
-
-## Angular static files
-
-GCP can serve static files independently from python service.
-It is faster especially when python service is restarting.
-
-By default, Angular files are compiled into directory
-`frontend/dist/frontend/browser/` but I have changed it
-to `backend/static` in `frontend\angular.json` file.
-So I have changed `app.yaml` file to reflect that change.
-
-```yaml
-```yaml
-runtime: python311
-entrypoint: gunicorn -b :$PORT -k uvicorn.workers.UvicornWorker backend.main:app
-
-handlers:
-
-- url: /api/.*
-  script: auto
-
-- url: /
-  static_files: backend/static/browser/index.html
-  upload: backend/static/browser/index.html
-
-- url: /(.+)
-  static_files: backend/static/browser/\1
-  upload: backend/static/browser/(.+)
-```
-
-## Python current path
-
-Unfortunately current path in python application is
-root directory (not `backend`). It is significant drawback.
-You have to make a workaround.
-
-- add current project path to sys path
-- all disk operations has to use current project path
-
-```python
-...
-project_path = '/'.join(__file__.split('/')[:-1])
-if project_path not in sys.path:
-    sys.path.append(project_path)
-
-from movies import Movie
-from static_files import static_file_response
-
-app = FastAPI()
-config = parse_config(f"{project_path}/config.yaml")
-...
 ```
 
 ## Deployment
 
-Build Angular project.
+First, build Angular project.
 
 ```bash
 cd frontend
@@ -162,8 +95,8 @@ cd ..
 Create GCP project as described in
 <https://cloud.google.com/appengine/docs/standard/python3/building-app/creating-gcp-project>.
 
-Deploy into GCP:
+Then beploy Python project into GCP:
 
 ```bash
-gcloud app deploy
+gcloud app deploy backend/app.yaml
 ```
