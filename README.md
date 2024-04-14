@@ -24,12 +24,28 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 pip install -r requirements-dev.txt
+cd ..
+```
+
+## Run development instance
+
+```bash
+cd frontend
+ng serve
+```
+
+And in the second terminal
+
+```bash
+cd backend
+uvicorn main:app --reload
 ```
 
 ## Angular static files
 
-GCP can serve static files independently from python service.
-It is faster especially when python service is restarting.
+GCP App Engine **Standard** can serve static files
+independently from python service. It is faster
+especially when python service is restarting.
 
 By default, Angular files are compiled into directory
 `frontend/dist/frontend/browser/` but I have changed it
