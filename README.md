@@ -116,3 +116,76 @@ Then beploy Python project into GCP:
 ```bash
 gcloud app deploy backend/app.yaml
 ```
+
+## GCP secrets
+
+When you have to deliver some secret data to the program, you should use
+`Secret Manger`. It is designed to store configuration data as passwords, API keys and
+certificates. Each secret is identified by `project_id`, `secret_id` and `version_id`.
+
+<https://cloud.google.com/secret-manager/docs/create-secret-quickstart#secretmanager-quickstart-python>
+
+Usually secret is set manulally but also can be set with code.
+
+```python
+from google.cloud import secretmanager
+
+
+class GcpSecrets:
+
+    def __init__(self, project_id: str = None):
+        if not project_id:
+            project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+        self.project_id = project_id
+        self.client = secretmanager.SecretManagerServiceClient()
+        self.parent = f"projects/{self.project_id}"
+
+
+    def create_secret(self, secret_id: str):
+        secret = self.client.create_secret(
+            request={
+                "parent": self.parent,
+                "secret_id": secret_id,
+                "secret": {"replication": {"automatic": {}}},
+            }
+        )
+        return secret
+```
+
+Project_id defines project in GCP. It is usually set as an evironment variable
+(`GOOGLE_CLOUD_PROJECT` or `GCLOUD_PROJECT`).
+Secret_id is defined by developer but the secret doesn't have any value.
+ You have to add version with specified value. Changing value means adding new version.
+
+```python
+    def add_secret_version(self, secret_id: str, payload: str):
+        secret_name = f"{self.parent}/secrets/{secret_id}"
+        response = self.client.add_secret_version(
+            request={"parent": secret_name, "payload": {"data": payload.encode('utf-8')}}
+        )
+        return response
+```
+
+When you want to read the secret value, you have to read sepecified version.
+Fortunately, you can list all avaliable versions.
+
+```python
+    def list_secret_versions(self, secret_id: str):
+        secret_name = f"{self.parent}/secrets/{secret_id}"
+        secrets = self.client.list_secret_versions(request={"parent": secret_name})
+        return secrets
+
+    def access_secret_version(self, secret_id: str, version_id: str):
+        version = f"{self.parent}/secrets/{secret_id}/versions/{version_id}"
+        response = self.client.access_secret_version(request={"name": version})
+        return response    
+```
+
+But usually reading last version of secret is enough.
+
+```python
+    def get_secret(self, secret_id: str) -> str:
+        version = f"{self.parent}/secrets/{secret_id}/versions/latest"
+        response = self.client.access_secret_version(request={"name": version})
+        return response.payload.data.decode("utf-8")
+```

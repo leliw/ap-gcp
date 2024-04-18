@@ -1,4 +1,10 @@
 -r requirements.txt
 
+# Tests
+iniconfig==2.0.0
+pluggy==1.4.0
+pytest==8.1.1
+tomli==2.0.1
+
 # Linters
 ruff
