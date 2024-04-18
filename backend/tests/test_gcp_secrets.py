@@ -1,8 +1,8 @@
 import unittest
 from gcp_secrets import GcpSecrets
 
-class TestGcpSecrets(unittest.TestCase):
 
+class TestGcpSecrets(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.project_id = "48284060390"
@@ -17,12 +17,18 @@ class TestGcpSecrets(unittest.TestCase):
         self.gcp_secrets.create_secret(self.secret_id)
         secrets = self.gcp_secrets.list_secrets()
         secret_name = [s.name for s in secrets if s.name.endswith(self.secret_id)][0]
-        self.assertEqual(secret_name, f"projects/{self.project_id}/secrets/{self.secret_id}")
+        self.assertEqual(
+            secret_name, f"projects/{self.project_id}/secrets/{self.secret_id}"
+        )
 
         self.gcp_secrets.add_secret_version(self.secret_id, "test_payload")
         versions = self.gcp_secrets.list_secret_versions(self.secret_id)
         version_name = [v.name for v in versions][0]
-        self.assertTrue(version_name.startswith(f"projects/{self.project_id}/secrets/{self.secret_id}/versions/"))
+        self.assertTrue(
+            version_name.startswith(
+                f"projects/{self.project_id}/secrets/{self.secret_id}/versions/"
+            )
+        )
 
         version_id = version_name.split("/")[-1]
         response = self.gcp_secrets.access_secret_version(self.secret_id, version_id)
@@ -30,7 +36,6 @@ class TestGcpSecrets(unittest.TestCase):
 
         secret = self.gcp_secrets.get_secret(self.secret_id)
         self.assertEqual(secret, "test_payload")
-
 
 
 if __name__ == "__main__":
