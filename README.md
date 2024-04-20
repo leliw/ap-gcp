@@ -189,3 +189,9 @@ But usually reading last version of secret is enough.
         response = self.client.access_secret_version(request={"name": version})
         return response.payload.data.decode("utf-8")
 ```
+
+Remember to add `Secret Manager Secret Accessor` role to service account.
+
+```bash
+gcloud projects add-iam-policy-binding [PROJECT_ID] --member="serviceAccount:[SERVICE_ACCOUNT_EMAIL]" --role="roles/secretmanager.secretAccessor"
+```
