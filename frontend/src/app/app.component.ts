@@ -3,6 +3,11 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, RouterOutlet } from '@angular/router';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { ConfigService } from './config/config.service';
+import { GoogleSigninButtonModule } from '@abacritt/angularx-social-login';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { AuthService } from './shared/auth/auth.service';
 
 export interface Hello {
     Hello: string;
@@ -10,7 +15,7 @@ export interface Hello {
 @Component({
     selector: 'app-root',
     standalone: true,
-    imports: [CommonModule, RouterOutlet, HttpClientModule, RouterModule],
+    imports: [CommonModule, RouterOutlet, HttpClientModule, RouterModule, MatToolbarModule, MatIconModule, MatButtonModule, GoogleSigninButtonModule],
     templateUrl: './app.component.html',
     styleUrl: './app.component.css'
 })
@@ -21,7 +26,7 @@ export class AppComponent {
     hello = '';
     version = '';
 
-    constructor(private http: HttpClient, private config: ConfigService) {
+    constructor(private http: HttpClient, public authService: AuthService, private config: ConfigService) {
         this.http.get<Hello>('/api').subscribe(data => {
             this.hello = data.Hello;
         });

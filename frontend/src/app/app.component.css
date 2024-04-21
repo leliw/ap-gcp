@@ -1,0 +1,35 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%
+}
+
+.flex-spacer {
+    flex: 1 1 auto;
+}
+
+main {
+    width: 100%;
+    height: calc(100% - 1.5em - var(--mat-toolbar-standard-height));
+}
+
+footer {
+    flex: 0 0 auto;
+    padding: 0em 0.5em 0.5em 0.5em;
+    text-align: right;
+    height: 1em;
+}
+
+.profile-photo {
+    border-radius: 50%;
+    width: calc(var(--mat-toolbar-standard-height) * 0.8);
+    height: calc(var(--mat-toolbar-standard-height) * 0.8);
+    border: 2px solid white;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+main.login {
+    display: grid;
+    place-items: center;
+}

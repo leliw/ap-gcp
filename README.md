@@ -199,12 +199,6 @@ gcloud projects add-iam-policy-binding [PROJECT_ID] --member="serviceAccount:[SE
 ## GCP OAuth2
 
 Google provides OAuth2 service which can be used to authenticate users.
-There is `gcp_oauth` module which provides `OAuth` class which use `jose`
-package to wrap all together.
-
-```bash
-pip install python-jose
-```
 
 ### Set OAuth consent screen and credentials
 
@@ -214,7 +208,16 @@ To use OAuth2 services in GCP project, you have to set:
 - OAuth credentials - <https://console.cloud.google.com/apis/credentials/oauthclient>
 - Add `http://127.0.0.1:8000/auth` and cloud instance address to `Authorized redirect URIs`
 
-### Initialize module
+### GCP OAuth - Python
+
+There is `gcp_oauth` module which provides `OAuth` class which use `jose`
+package to wrap all together.
+
+```bash
+pip install python-jose
+```
+
+#### Initialize module
 
 Copy `client_id` and `sevret_id` provided by OAuth credentials
 and initialize `OAuth` class.
@@ -241,12 +244,12 @@ from gcp_secrets import GcpSecrets
 secrets = GcpSecrets("angular-python-420314")
 client_secret = secrets.get_secret("oauth_client_secret")
 oAuth = OAuth(
-    client_id="48284060390-kope189hgqlq39u2m96jjqcaetib4tq8.apps.googleusercontent.com",
+    client_id="...",
     client_secret=client_secret,
 )
 ```
 
-### Redirect to login Google page
+#### Redirect to login Google page
 
 First is `login` page which redirects user to Google login page.
 
@@ -256,7 +259,7 @@ async def login_google(request: Request):
     return oAuth.redirect_login(request)
 ```
 
-### Authorization page
+#### Authorization page
 
 When Google authorize user, then it redirects user to `auth` page
 with `code` parameter. This alowes us to get `access token` and
@@ -268,7 +271,7 @@ async def auth_google(code: str):
     return await oAuth.auth(code)
 ```
 
-### Verify access token
+#### Verify access token
 
 It is also possible, that user is already authorized in another
 system (e.g. Angular). In this case, all requests have `Authorization`
@@ -281,7 +284,7 @@ async def verify_token_middleware(request: Request, call_next):
     return await oAuth.verify_token_middleware(request, call_next)
 ```
 
-### Set python script as handler 
+#### Set python script as handler
 
 In `app.yaml` add these two paths to be
 served by python script:
@@ -292,4 +295,228 @@ served by python script:
 
 - url: /auth
   script: auto
+```
+
+### GCP OAuth - Angular
+
+Angualr authorization requires setting `Authorized JavaScript origins`
+on <https://console.cloud.google.com/apis/credentials>. For development
+environment you have to add **both** `http://localhost:4200` and
+`http://localhost`. And use `http://localhost:4200` in browser.
+
+#### Install Angular library (angularx-social-login)
+
+<https://www.npmjs.com/package/@abacritt/angularx-social-login>.
+
+```bash
+cd frontend
+npm i @abacritt/angularx-social-login
+```
+
+#### Create AuthService
+
+```bash
+ng generate service shared/auth/auth
+```
+
+```typescript
+import { SocialAuthService, SocialUser } from '@abacritt/angularx-social-login';
+import { Injectable } from '@angular/core';
+
+@Injectable({
+    providedIn: 'root'
+})
+export class AuthService {
+
+    user: SocialUser | null = null;
+    loggedIn: boolean = false;
+
+    constructor(private socialAuthService: SocialAuthService) {
+        this.socialAuthService.authState.subscribe((user) => {
+            this.user = user;
+            this.loggedIn = (user != null);
+        });
+    }
+
+    public signOut(): void {
+        this.socialAuthService.signOut();
+        this.user = null;
+        this.loggedIn = false;
+    }
+
+    public getToken(): string {
+        return this.user?.idToken ?? '';
+    }
+    
+}
+```
+
+#### Create authInterceptor
+
+```bash
+ng generate interceptor shared/auth/auth-interceptor
+```
+
+
+```typescript
+import { HttpInterceptorFn } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { AuthService } from './auth.service';
+
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+    const authService = inject(AuthService);
+    const authToken = authService.getToken();
+
+    // Clone the request and add the authorization header
+    const authReq = req.clone({
+        setHeaders: {
+            Authorization: `Bearer ${authToken}`
+        }
+    });
+    return next(authReq);
+};
+```
+
+#### Add GoogleLoginProvider inject authInterceptor
+
+In code below replace `{clientId}` with real client.
+
+```typescript
+// app.config.ts
+...
+import { GoogleLoginProvider, SocialAuthServiceConfig } from '@abacritt/angularx-social-login';
+
+export const appConfig: ApplicationConfig = {
+    providers: [
+        provideRouter(routes),
+        provideAnimationsAsync(),
+        provideHttpClient(withInterceptors([authInterceptor])),
+        {
+            provide: 'SocialAuthServiceConfig',
+            useValue: {
+                autoLogin: false,
+                providers: [
+                    {
+                        id: GoogleLoginProvider.PROVIDER_ID,
+                        provider: new GoogleLoginProvider(
+                            '{clientId}'
+                        )
+                    }
+                ],
+                onError: (err: any) => {
+                    console.error(err);
+                }
+            } as SocialAuthServiceConfig,
+        }
+    ]
+};
+```
+
+#### Add Google login button
+
+Modify `app.component.ts`.
+
+- add AuthService in constructor
+- read authState in ngOnInit
+- add signOut() method
+
+```typescript
+export class AppComponent implements OnInit {
+
+    version = '';
+    user: SocialUser | null = null;
+    loggedIn: boolean = false;
+
+    constructor(private authService: SocialAuthService, private config: ConfigService) {
+        this.config.getConfig().subscribe(c => {
+            this.version = c.version;
+        })
+    }
+
+    ngOnInit() {
+        this.authService.authState.subscribe((user) => {
+            this.user = user;
+            this.loggedIn = (user != null);
+        });
+    }
+
+    signOut(): void {
+        this.authService.signOut();
+        this.user = null;
+        this.loggedIn = false;
+    }
+
+} 
+```
+
+Modify `app.component.html`.
+
+- add toolbar with user photo and logout button in header
+- add login button in main section
+
+```html
+<header>
+    <mat-toolbar color="primary">
+        <h1>Hello, {{hello}} - {{ title }}</h1>
+        @if(authService.user != null){
+        <div class="flex-spacer"></div>
+        <img src="{{ authService.user.photoUrl }}" class="profile-photo" alt="User profile" referrerpolicy="no-referrer">
+        <button mat-icon-button aria-label="Logout" (click)="authService.signOut()">
+            <mat-icon>logout</mat-icon>
+        </button>
+        }
+    </mat-toolbar>
+</header>
+<main [class.login]="!authService.loggedIn">
+    @if(authService.loggedIn){
+    <p>Congratulations! Your app is running . 🎉</p>
+    <a routerLink="/movies">Movies</a>
+    <router-outlet></router-outlet>
+    }@else{
+    <asl-google-signin-button type='standard' size='large'></asl-google-signin-button>
+    }
+</main>
+<footer>
+    <span>ver. {{version}}</span>
+</footer>
+```
+
+Modify `app.component.css`.
+
+```css
+:host {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%
+}
+
+.flex-spacer {
+    flex: 1 1 auto;
+}
+
+main {
+    width: 100%;
+    height: calc(100% - 1.5em - var(--mat-toolbar-standard-height));
+}
+
+footer {
+    flex: 0 0 auto;
+    padding: 0em 0.5em 0.5em 0.5em;
+    text-align: right;
+    height: 1em;
+}
+
+.profile-photo {
+    border-radius: 50%;
+    width: calc(var(--mat-toolbar-standard-height) * 0.8);
+    height: calc(var(--mat-toolbar-standard-height) * 0.8);
+    border: 2px solid white;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+main.login {
+    display: grid;
+    place-items: center;
+}
 ```
