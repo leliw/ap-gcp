@@ -6,11 +6,29 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
 from pyaml_env import parse_config
 
+from gcp_oauth import OAuth
+from gcp_secrets import GcpSecrets
 from movies import Movie
 from static_files import static_file_response
 
 app = FastAPI()
 config = parse_config("./config.yaml")
+secrets = GcpSecrets("angular-python-420314")
+client_secret = secrets.get_secret("oauth_client_secret")
+oAuth = OAuth(
+    client_id="48284060390-kope189hgqlq39u2m96jjqcaetib4tq8.apps.googleusercontent.com",
+    client_secret=client_secret,
+)
+
+
+@app.get("/login")
+async def login_google(request: Request):
+    return oAuth.redirect_login(request)
+
+
+@app.get("/auth")
+async def auth_google(code: str):
+    return await oAuth.auth(code)
 
 
 @app.get("/api/config")

@@ -8,7 +8,9 @@ class GcpSecrets:
     """A simple wrapper around Google Cloud Secret Manager API."""
 
     def __init__(self, project_id: str = None):
-        self.project_id = project_id or os.getenv("GOOGLE_CLOUD_PROJECT")
+        self.project_id = os.getenv("GOOGLE_CLOUD_PROJECT", project_id)
+        if self.project_id is None:
+            raise ValueError("GOOGLE_CLOUD_PROJECT environment variable not set.")
         self.client = secretmanager.SecretManagerServiceClient()
         self.parent = f"projects/{self.project_id}"
 

@@ -134,9 +134,9 @@ from google.cloud import secretmanager
 class GcpSecrets:
 
     def __init__(self, project_id: str = None):
-        if not project_id:
-            project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
-        self.project_id = project_id
+        self.project_id = os.getenv("GOOGLE_CLOUD_PROJECT", project_id)
+        if self.project_id is None:
+            raise ValueError("GOOGLE_CLOUD_PROJECT environment variable not set.")
         self.client = secretmanager.SecretManagerServiceClient()
         self.parent = f"projects/{self.project_id}"
 
@@ -195,3 +195,89 @@ Remember to add `Secret Manager Secret Accessor` role to service account.
 ```bash
 gcloud projects add-iam-policy-binding [PROJECT_ID] --member="serviceAccount:[SERVICE_ACCOUNT_EMAIL]" --role="roles/secretmanager.secretAccessor"
 ```
+
+## GCP OAuth2
+
+Google provides OAuth2 service which can be used to authenticate users.
+There is `gcp_oauth` module which provides `OAuth` class which use `jose`
+package to wrap all together.
+
+```bash
+pip install python-jose
+```
+
+### Set OAuth consent screen and credentials
+
+To use OAuth2 services in GCP project, you have to set:
+
+- OAuth consent screen - <https://console.cloud.google.com/apis/credentials/consent>
+- OAuth credentials - <https://console.cloud.google.com/apis/credentials/oauthclient>
+- Add `http://127.0.0.1:8000/auth` and cloud instance address to `Authorized redirect URIs`
+
+### Initialize module
+
+Copy `client_id` and `sevret_id` provided by OAuth credentials
+and initialize `OAuth` class.
+
+```python
+from gcp_oauth import OAuth
+
+...
+
+oAuth = OAuth(
+    client_id="...",
+    client_secret="..."
+)
+```
+
+But `client_secret` is secert and shoult be stored in secret manager
+(replace `angular-python-420314` with your GCP project_id):
+
+```python
+from gcp_secrets import GcpSecrets
+
+...
+
+secrets = GcpSecrets("angular-python-420314")
+client_secret = secrets.get_secret("oauth_client_secret")
+oAuth = OAuth(
+    client_id="48284060390-kope189hgqlq39u2m96jjqcaetib4tq8.apps.googleusercontent.com",
+    client_secret=client_secret,
+)
+```
+
+### Redirect to login Google page
+
+First is `login` page which redirects user to Google login page.
+
+```python
+@app.get("/login")
+async def login_google(request: Request):
+    return oAuth.redirect_login(request)
+```
+
+### Authorization page
+
+When Google authorize user, then it redirects user to `auth` page
+with `code` parameter. This alowes us to get `access token` and
+access token allows to access Google services and get user data.
+
+```python
+@app.get("/auth")
+async def auth_google(code: str):
+    return await oAuth.auth(code)
+```
+
+### Verify access token
+
+It is also possible, that user is already authorized in another
+system (e.g. Angular). In this case, all requests have `Authorization`
+header with access token. To protect (almost) all requests, add
+this middleware.
+
+```python
+@app.middleware("http")
+async def verify_token_middleware(request: Request, call_next):
+    return await oAuth.verify_token_middleware(request, call_next)
+```
+
