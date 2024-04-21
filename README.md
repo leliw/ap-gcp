@@ -281,3 +281,15 @@ async def verify_token_middleware(request: Request, call_next):
     return await oAuth.verify_token_middleware(request, call_next)
 ```
 
+### Set python script as handler 
+
+In `app.yaml` add these two paths to be
+served by python script:
+
+```yaml
+- url: /login
+  script: auto
+
+- url: /auth
+  script: auto
+```

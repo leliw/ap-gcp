@@ -56,7 +56,7 @@ class OAuth:
             scheme = request.url.scheme
             host = request.url.hostname
             port = request.url.port
-            if (scheme == "http" and port == 80) or (scheme == "https" and port == 443):
+            if not port or (scheme == "http" and port == 80) or (scheme == "https" and port == 443):
                 netloc = host
             else:
                 netloc = f"{host}:{port}"

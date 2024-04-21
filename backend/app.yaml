@@ -6,6 +6,12 @@ handlers:
 - url: /api/.*
   script: auto
 
+- url: /login
+  script: auto
+
+- url: /auth
+  script: auto
+
 - url: /
   static_files: static/browser/index.html
   upload: static/browser/index.html
