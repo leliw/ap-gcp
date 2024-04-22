@@ -303,6 +303,7 @@ Angualr authorization requires setting `Authorized JavaScript origins`
 on <https://console.cloud.google.com/apis/credentials>. For development
 environment you have to add **both** `http://localhost:4200` and
 `http://localhost`. And use `http://localhost:4200` in browser.
+See: <https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid>
 
 #### Install Angular library (angularx-social-login)
 
@@ -356,7 +357,6 @@ export class AuthService {
 ```bash
 ng generate interceptor shared/auth/auth-interceptor
 ```
-
 
 ```typescript
 import { HttpInterceptorFn } from '@angular/common/http';

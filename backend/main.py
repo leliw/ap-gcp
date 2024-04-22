@@ -16,7 +16,7 @@ config = parse_config("./config.yaml")
 secrets = GcpSecrets("angular-python-420314")
 client_secret = secrets.get_secret("oauth_client_secret")
 oAuth = OAuth(
-    client_id="48284060390-kope189hgqlq39u2m96jjqcaetib4tq8.apps.googleusercontent.com",
+    client_id=config.get("oauth_client_id"),
     client_secret=client_secret,
 )
 
@@ -29,6 +29,11 @@ async def login_google(request: Request):
 @app.get("/auth")
 async def auth_google(code: str):
     return await oAuth.auth(code)
+
+
+@app.middleware("http")
+async def verify_token_middleware(request: Request, call_next):
+    return await oAuth.verify_token_middleware(request, call_next)
 
 
 @app.get("/api/config")

@@ -1,10 +1,11 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, map, of } from 'rxjs';
+import { Observable, firstValueFrom, map, of } from 'rxjs';
 
 export interface Config {
     title: string;
     version: string;
+    oauth_client_id: string;
 }
 
 @Injectable({
@@ -30,4 +31,8 @@ export class ConfigService {
             return of(ConfigService.config);
     }
 
+    getOAuthClientId(): Promise<string> {
+        return firstValueFrom(this.getConfig()
+            .pipe(map(c => c.oauth_client_id)));
+    }
 }

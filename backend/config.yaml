@@ -3,3 +3,4 @@ version: 0.0.1
 organization:
   name: "My Organization"
   address: "123 Main St"
+oauth_client_id: '48284060390-kope189hgqlq39u2m96jjqcaetib4tq8.apps.googleusercontent.com'
