@@ -4,6 +4,7 @@ from typing import Any
 from urllib.parse import urlparse, urlunparse
 from fastapi import Request, Response
 from fastapi.responses import RedirectResponse
+from pydantic import BaseModel
 import requests
 import fnmatch
 from jose import jwt
@@ -13,6 +14,14 @@ GOOGLE_URL_PUBLIC_KEYS = "https://www.googleapis.com/oauth2/v1/certs"
 GOOGLE_URL_AUTH = "https://accounts.google.com/o/oauth2/auth?response_type=code&client_id={}&redirect_uri={}&scope=openid%20profile%20email&access_type=offline"
 GOOGLE_URL_TOKEN = "https://accounts.google.com/o/oauth2/token"
 GOOGLE_URL_USERINFO = "https://www.googleapis.com/oauth2/v1/userinfo"
+
+
+class UserData(BaseModel):
+    email: str
+    name: str
+    given_name: str
+    family_name: str
+    picture: str
 
 
 class OAuth:
@@ -75,7 +84,7 @@ class OAuth:
                 )
             )
 
-    async def auth(self, code: str):
+    async def auth(self, code: str) -> UserData:
         """Authenticate user with Google OAuth2 and return user info."""
         data = {
             "code": code,
@@ -90,7 +99,7 @@ class OAuth:
             GOOGLE_URL_USERINFO,
             headers={"Authorization": f"Bearer {access_token}"},
         )
-        return user_info.json()
+        return UserData.model_validate(user_info.json())
 
     async def verify_token_middleware(self, request: Request, call_next) -> Response:
         """Verify token middleware."""
@@ -106,6 +115,15 @@ class OAuth:
                 return Response(content="Unauthorized", status_code=401)
         response = await call_next(request)
         return response
+
+    def verify_token(self, request: Request) -> dict[str, Any] | None:
+        """Verify token."""
+        token = request.headers.get("Authorization")
+        if token:
+            token = token.split(" ")[1]
+            print(token)
+            return self.verify_jwt(token)
+        return None
 
     def requre_auth(self, request: Request) -> bool:
         """Check if the request path requires authentication."""
