@@ -520,3 +520,75 @@ main.login {
     place-items: center;
 }
 ```
+
+## Sessions
+
+Usually when user log in the user session is starting.
+During next reqest, the session is checked, not authorization
+token - it is faster.
+
+```bash
+pip install fastapi-sessions
+```
+
+### Define sessionData
+
+Define class denoting data stored in session.
+At least in have to be user identifier.
+
+```python
+class SessionData(BaseModel):
+    username: str
+```
+
+### Initialise SessionManager
+
+```python
+session_manager = SessionManager[SessionData]()
+```
+
+### Create session when user logs in
+
+```python
+@app.get("/auth")
+async def auth_google(code: str, response: Response):
+    user_data = await oAuth.auth(code)
+    await session_manager.create_session(response, SessionData(username=user_data.name))
+    return user_data
+```
+
+### Get session data
+
+```python
+@app.get("/api/user")
+async def user_get(session_data: SessionData = Depends(session_manager)):
+    return session_data.user
+```
+
+### Handle Invalid session exception
+
+When session is invalid try to authorize user
+with token and create session again.
+
+```python
+async def session_reader(request: Request, response: Response) -> SessionData:
+    try:
+        data = await session_manager(request)
+        return data
+    except InvalidSessionException:
+        pass
+    except HTTPException as e:
+        if e.status_code != 403 or e.detail != "No session provided":
+            raise e
+    user_data = oAuth.verify_token(request)
+    if not user_data:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    data = SessionData(user=user_data)
+    await session_manager.create_session(response, data)
+    return data
+
+
+@app.get("/api/user")
+async def user_get(session_data: SessionData = Depends(session_reader)):
+    return session_data.user
+```

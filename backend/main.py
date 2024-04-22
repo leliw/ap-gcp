@@ -1,24 +1,29 @@
 """Main file for FastAPI server"""
 
+import datetime
 import json
-from typing import List, Union
-from fastapi import FastAPI, HTTPException, Request, Response
+from typing import Annotated, List, Optional, Union
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
 from pyaml_env import parse_config
 
 from gcp_oauth import OAuth
 from gcp_secrets import GcpSecrets
+from gcp_session import SessionManager, SessionData as BaseSessionData
 from movies import Movie
 from static_files import static_file_response
 
+
+class SessionData(BaseSessionData):
+    login_time: Optional[datetime.datetime] = None
+
+
 app = FastAPI()
 config = parse_config("./config.yaml")
-secrets = GcpSecrets("angular-python-420314")
+secrets = GcpSecrets(config.get("project_id"))
 client_secret = secrets.get_secret("oauth_client_secret")
-oAuth = OAuth(
-    client_id=config.get("oauth_client_id"),
-    client_secret=client_secret,
-)
+oAuth = OAuth(config.get("oauth_client_id"), client_secret)
+session_manager = SessionManager[SessionData](oAuth, SessionData)
 
 
 @app.get("/login")
@@ -27,13 +32,41 @@ async def login_google(request: Request):
 
 
 @app.get("/auth")
-async def auth_google(code: str):
-    return await oAuth.auth(code)
+async def auth_google(code: str, response: Response):
+    user_data = await oAuth.auth(code)
+    print(user_data)
+    await session_manager.create_session(response, SessionData(user=user_data))
+    return user_data
 
 
-@app.middleware("http")
-async def verify_token_middleware(request: Request, call_next):
-    return await oAuth.verify_token_middleware(request, call_next)
+# @app.middleware("http")
+# async def verify_token_middleware(request: Request, call_next):
+#     return await oAuth.verify_token_middleware(request, call_next)
+
+
+# async def session_reader(request: Request, response: Response) -> SessionData:
+#     try:
+#         data = await session_manager(request)
+#         return data
+#     except InvalidSessionException:
+#         pass
+#     except HTTPException as e:
+#         if e.status_code != 403 or e.detail != "No session provided":
+#             raise e
+#     user_data = oAuth.verify_token(request)
+#     if not user_data:
+#         raise HTTPException(status_code=401, detail="Unauthorized")
+#     data = SessionData(user=user_data)
+#     await session_manager.create_session(response, data)
+#     return data
+
+
+SessionDataDep = Annotated[SessionData, Depends(session_manager.session_reader)]
+
+
+@app.get("/api/user")
+async def user_get(session_data: SessionDataDep):
+    return session_data.user
 
 
 @app.get("/api/config")
@@ -60,7 +93,8 @@ movies = {f"{movie['title']}_{movie['year']}": Movie(**movie) for movie in movie
 
 
 @app.get("/api/movies", response_model=List[Movie])
-async def get_all_movies():
+async def get_all_movies(session_data: SessionDataDep):
+    print(session_data)
     return [movie for movie in movies.values()]
 
 
