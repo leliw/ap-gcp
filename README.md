@@ -111,10 +111,69 @@ cd ..
 Create GCP project as described in
 <https://cloud.google.com/appengine/docs/standard/python3/building-app/creating-gcp-project>.
 
+```bash
+gcloud init
+gcloud app create
+```
+
 Then beploy Python project into GCP:
 
 ```bash
 gcloud app deploy backend/app.yaml
+```
+
+## GCP access key
+
+While local development you will have to access some cloud services.
+To do that, you have to be authorized. You can do it with a access key.
+
+### Get default service's access key
+
+Go to [IAM & Admin -> Service accounts](https://console.cloud.google.com/iam-admin/serviceaccounts) and
+select your project. There shoult be already created `Default compute service account`. Select
+`Manage keys` from `Actions` column. Click `Add key` and `Create new key`. Leave `JSON` selected and
+click `Create` and save json file in safe place. I used to store keys in `.keys/` project's directory.
+
+**Remeber to add `.keys/*` in `.gitignore` file!!!**
+
+### Apoint saved key to use
+
+To authorize with this saved key you have to set environment variable.
+
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS="/home/user/Downloads/service-account-file.json"
+```
+
+You can set this variable globally in the `~/.bashrc` or `~/.profile file` but if you develop
+several projects it is a problem. You can also set it manually each time but I prefer to set
+VSC `RUN AND DEBUG` configuration for each project / workspace. Add something like this to
+`*.code-workspace` file.
+
+```json
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "name": "Python: FastAPI",
+                "type": "debugpy",
+                "request": "launch",
+                "module": "uvicorn",
+                "env": {
+                    "GOOGLE_APPLICATION_CREDENTIALS": "../.keys/ap-gcp.json"
+                },
+                "args": [
+                    "main:app",
+                    "--reload",
+                ]
+            }
+        ]
+    }
+```
+
+or just write `backend/.env` file.
+
+```text
+GOOGLE_APPLICATION_CREDENTIALS=../.keys/ap-gcp.json
 ```
 
 ## GCP secrets
@@ -124,6 +183,12 @@ When you have to deliver some secret data to the program, you should use
 certificates. Each secret is identified by `project_id`, `secret_id` and `version_id`.
 
 <https://cloud.google.com/secret-manager/docs/create-secret-quickstart#secretmanager-quickstart-python>
+
+Install the client library
+
+```bash
+pip install google-cloud-secret-manager
+```
 
 Usually secret is set manulally but also can be set with code.
 
@@ -383,33 +448,35 @@ In code below replace `{clientId}` with real client.
 
 ```typescript
 // app.config.ts
-...
-import { GoogleLoginProvider, SocialAuthServiceConfig } from '@abacritt/angularx-social-login';
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterOutlet } from '@angular/router';
+import { ConfigService } from './config/config.service';
+import { ChatComponent } from './chat/chat.component';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { AuthService } from './shared/auth/auth.service';
+import { GoogleSigninButtonModule } from '@abacritt/angularx-social-login';
 
-export const appConfig: ApplicationConfig = {
-    providers: [
-        provideRouter(routes),
-        provideAnimationsAsync(),
-        provideHttpClient(withInterceptors([authInterceptor])),
-        {
-            provide: 'SocialAuthServiceConfig',
-            useValue: {
-                autoLogin: false,
-                providers: [
-                    {
-                        id: GoogleLoginProvider.PROVIDER_ID,
-                        provider: new GoogleLoginProvider(
-                            '{clientId}'
-                        )
-                    }
-                ],
-                onError: (err: any) => {
-                    console.error(err);
-                }
-            } as SocialAuthServiceConfig,
-        }
-    ]
-};
+@Component({
+    selector: 'app-root',
+    standalone: true,
+    imports: [CommonModule, RouterOutlet, ChatComponent, MatToolbarModule, MatIconModule, MatButtonModule, GoogleSigninButtonModule],
+    templateUrl: './app.component.html',
+    styleUrl: './app.component.css'
+})
+export class AppComponent {
+
+    version = '';
+
+    constructor(public authService: AuthService, private config: ConfigService) {
+        this.config.getConfig().subscribe(c => {
+            this.version = c.version;
+        })
+    }
+
+} 
 ```
 
 #### Add Google login button
@@ -591,4 +658,12 @@ async def session_reader(request: Request, response: Response) -> SessionData:
 @app.get("/api/user")
 async def user_get(session_data: SessionData = Depends(session_reader)):
     return session_data.user
+```
+
+## GCP Firestore
+
+Install client library.
+
+```bash
+pip install --upgrade google-cloud-firestore
 ```

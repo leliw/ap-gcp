@@ -1,10 +1,29 @@
 {
-	"folders": [
-		{
-			"path": "backend"
-		}
+    "folders": [
+        {
+            "path": "backend"
+        }
     ],
     "settings": {
         "workbench.colorTheme": "Tomorrow Night Blue"
+    },
+    
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "name": "Python: FastAPI",
+                "type": "debugpy",
+                "request": "launch",
+                "module": "uvicorn",
+                "env": {
+                    "GOOGLE_APPLICATION_CREDENTIALS": "../.keys/ap-gcp.json"
+                },
+                "args": [
+                    "main:app",
+                    "--reload",
+                ]
+            },
+        ]
     }
 }
