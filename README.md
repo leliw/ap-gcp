@@ -30,15 +30,11 @@ cd ..
 ## Run development instance
 
 ```bash
-cd frontend
-ng serve
-```
-
-And in the second terminal
-
-```bash
 cd backend
-uvicorn main:app --reload
+uvicorn main:app --reload &
+cd ../frontend
+ng serve -o
+cd ..
 ```
 
 ## Angular static files
