@@ -7,9 +7,11 @@ from fastapi_sessions.session_verifier import SessionVerifier
 from fastapi_sessions.frontends.implementations import SessionCookie, CookieParameters
 from fastapi_sessions.backends.session_backend import SessionBackend, SessionModel
 
+
 class InvalidSessionException(HTTPException):
     def __init__(self):
         super().__init__(status_code=403, detail="Invalid session")
+
 
 class BasicVerifier(SessionVerifier[UUID, SessionModel]):
     def __init__(
@@ -48,6 +50,7 @@ class BasicVerifier(SessionVerifier[UUID, SessionModel]):
 
 class SessionManager(Generic[SessionModel]):
     """Session manager."""
+
     def __init__(
         self, backend: SessionBackend = None, verifier: SessionVerifier = None
     ):
@@ -73,6 +76,9 @@ class SessionManager(Generic[SessionModel]):
         await self.backend.create(session, data)
         self.cookie.attach_to_response(response, session)
         return session
+
+    def get_session_id(self, request: Request) -> UUID:
+        return self.cookie(request)
 
     async def delete_session(self, request: Request, response: Response):
         """Delete the current session."""
